@@ -3,6 +3,8 @@ namespace App\ApiModule\Presenters;
 
 use App\Presenters\BasePresenter;
 use Nette\Application\Responses\JsonResponse;
+use Nette\Http\IResponse;
+use Nette\Http\Response;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,9 +50,13 @@ class MessagesPresenter extends BasePresenter
         $this->sendResponse(new JsonResponse($roomId == 1 ? $messageList1 : $messageList2));
     }
 
-    public function create()
+    public function actionCreate()
     {
+        $response = $this->getHttpResponse();
+        $response->setCode(IResponse::S201_CREATED);
 
+        $response->setHeader("Location", $this->link("Messages:get", ['id' => 100]));
+        $this->terminate();
     }
 
 }

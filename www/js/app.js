@@ -6,6 +6,7 @@ var App = (function () {
     App.prototype.init = function () {
         var _this = this;
         this.initSwitchRoomListener();
+        this.initSendMessageListener();
         this.getUserName(function (username) {
             _this.loadRoomList();
         });
@@ -26,6 +27,16 @@ var App = (function () {
                 _this.switchContext(_this.activeRoom);
             }
             console.log("room selected: " + roomId);
+        });
+    };
+    App.prototype.initSendMessageListener = function () {
+        var _this = this;
+        $("#messageForm").on('submit', function (e) {
+            var text = $("#messageInput").val();
+            if (text.length !== 0 && text.trim()) {
+                _this.sendMessage(text, _this.activeRoom);
+            }
+            e.preventDefault();
         });
     };
     App.prototype.getUserName = function (callback) {
@@ -112,7 +123,8 @@ var App = (function () {
             '</div>');
     };
     App.prototype.getMessages = function (room, limit, since, onSuccess) {
-        $.get("/api/messages", { "roomId": room.id, "since": since.utc().format() }, function (data) {
+        $.get("/api/messages", { "roomId": room.id, "since": since.utc().format() }, function (data, textStatus, request) {
+            console.log();
             console.log("room history recieved");
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var messageData = data_1[_i];
@@ -121,6 +133,28 @@ var App = (function () {
                 room.addMessage(message);
             }
             onSuccess(room);
+        });
+    };
+    App.prototype.sendMessage = function (text, room) {
+        var _this = this;
+        this.getUserName(function (username) {
+            var sendTime = moment();
+            $.post("/api/messages", {
+                "name": username,
+                "message": text,
+                "roomId": room.id
+            }, function (data, textStatus, request) {
+                if (request.status == 201) {
+                    // let id: number = Number(request.getResponseHeader('Location').match(//i));
+                    var id = 100;
+                    var message = new Message(id, username, text, sendTime);
+                    room.addMessage(message);
+                    if (_this.activeRoom == room) {
+                        _this.showNewMessage(message);
+                        $("#messageInput").val("");
+                    }
+                }
+            });
         });
     };
     return App;

@@ -1,4 +1,5 @@
 import Moment = moment.Moment;
+
 class App {
     private activeRoom: RoomData = null;
     private roomList: RoomData[] = [];
@@ -8,6 +9,7 @@ class App {
 
     public init() {
         this.initSwitchRoomListener();
+        this.initSendMessageListener();
         this.getUserName((username) => {
             this.loadRoomList();
         });
@@ -29,6 +31,16 @@ class App {
             }
             console.log("room selected: " + roomId);
         });
+    }
+
+    private initSendMessageListener() {
+        $("#messageForm").on('submit', (e) => {
+            let text: string = $("#messageInput").val();
+            if (text.length !== 0 && text.trim()) {
+                this.sendMessage(text, this.activeRoom);
+            }
+            e.preventDefault();
+        })
     }
 
 
@@ -118,7 +130,7 @@ class App {
     private showNewMessage(message: Message) {
         $(".messages").append('<div class="msg">' +
             '<div class="media-body">' +
-            '<small class="pull-right time"><i class="fa fa-clock-o"></i> '+message.sentOn.format('D.M. HH:mm:ss')+'</small>' +
+            '<small class="pull-right time"><i class="fa fa-clock-o"></i> ' + message.sentOn.format('D.M. HH:mm:ss') + '</small>' +
             '<h5 class="media-heading">' + message.name + '</h5>' +
             '<small class="col-sm-11">' + message.text + '</small>' +
             '</div>' +
@@ -126,7 +138,8 @@ class App {
     }
 
     private getMessages(room: RoomData, limit: Number, since: Moment, onSuccess: (room: RoomData) => any) {
-        $.get("/api/messages", {"roomId": room.id, "since": since.utc().format()}, (data) => {
+        $.get("/api/messages", {"roomId": room.id, "since": since.utc().format()}, (data, textStatus, request) => {
+            console.log();
             console.log("room history recieved");
             for (let messageData of data) {
                 let sentOn: Moment = moment(messageData.sentOn);
@@ -135,6 +148,30 @@ class App {
             }
             onSuccess(room);
         })
+    }
+
+    private sendMessage(text: string, room: RoomData) {
+        this.getUserName(username => {
+            let sendTime: Moment = moment();
+            $.post("/api/messages", {
+                "name": username,
+                "message": text,
+                "roomId": room.id
+            }, (data, textStatus, request) => {
+                if (request.status == 201) {
+                    // let id: number = Number(request.getResponseHeader('Location').match(//i));
+                    let id: number = 100;
+                    let message: Message = new Message(id, username, text, sendTime);
+                    room.addMessage(message);
+
+                    if (this.activeRoom == room) {
+                        this.showNewMessage(message);
+                        $("#messageInput").val("");
+                    }
+                }
+            });
+        });
+
     }
 }
 
