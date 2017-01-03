@@ -1,6 +1,10 @@
+import Moment = moment.Moment;
 class App {
     private activeRoom: RoomData = null;
     private roomList: RoomData[] = [];
+
+    private static historySize: number = 10;
+    private static historyDaysBack: number = 2;
 
     public init() {
         this.initSwitchRoomListener();
@@ -97,19 +101,16 @@ class App {
         }
     }
 
-    private switchContext(room: RoomData, messages?: Message[]) {
+    private switchContext(room: RoomData) {
         if (!room.isinitialized()) {
-            return this.getMessages(room, null, (room: RoomData, messages: Message[]) => {
-                this.switchContext(room, messages)
+            return this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), (room: RoomData) => {
+                this.switchContext(room)
             });
         }
         $(".messages .msg").remove();
 
-        console.log(messages);
 
-        let newMessages = (messages ? messages : room.messages);
-        console.log(this);
-        for (let message of newMessages) {
+        for (let message of room.getMessages()) {
             this.showNewMessage(message);
         }
     }
@@ -117,27 +118,22 @@ class App {
     private showNewMessage(message: Message) {
         $(".messages").append('<div class="msg">' +
             '<div class="media-body">' +
-            '<small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>' +
+            '<small class="pull-right time"><i class="fa fa-clock-o"></i> '+message.sentOn.format('D.M. HH:mm:ss')+'</small>' +
             '<h5 class="media-heading">' + message.name + '</h5>' +
             '<small class="col-sm-11">' + message.text + '</small>' +
             '</div>' +
             '</div>');
     }
 
-    private getMessages(room: RoomData, since: Date, onSuccess: (room: RoomData, messages: Message[]) => any) {
-        $.get("/api/messages", {"roomId": room.id}, (data) => {
+    private getMessages(room: RoomData, limit: Number, since: Moment, onSuccess: (room: RoomData) => any) {
+        $.get("/api/messages", {"roomId": room.id, "since": since.utc().format()}, (data) => {
             console.log("room history recieved");
-            let messages: Message[] = [];
             for (let messageData of data) {
-                let message: Message = new Message(messageData.id, messageData.name, messageData.message, messageData.sentOn);
-                messages.push(message);
-                room.messages.push(message);
+                let sentOn: Moment = moment(messageData.sentOn);
+                let message: Message = new Message(messageData.id, messageData.name, messageData.message, sentOn);
+                room.addMessage(message);
             }
-
-            if (!room.isinitialized()) {
-                room.initMessages(messages);
-            }
-            onSuccess(room, messages);
+            onSuccess(room);
         })
     }
 }

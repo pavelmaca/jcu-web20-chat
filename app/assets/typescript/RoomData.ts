@@ -3,7 +3,9 @@ class RoomData {
     private _id: number;
     private _name: string;
 
-    private _messages: Message[] = [];
+    private _messages: {[id: number]: Message} = {};
+
+    private latMessageDate: Moment;
 
 
     private initialized = false;
@@ -12,7 +14,6 @@ class RoomData {
         this._id = id;
         this._name = name;
     }
-
 
     public isinitialized(): boolean {
         return this.initialized;
@@ -27,16 +28,16 @@ class RoomData {
     }
 
 
-    get messages(): Message[] {
-        return this._messages;
-    }
-
-    public initMessages(messages: Message[]) {
-        this.initialized = true;
-        this.messages.concat(messages);
+    public getMessages() {
+        return Object.keys(this._messages).map(prop => this._messages[prop]).sort((a, b) => {
+            return a.sentOn.diff(b.sentOn);
+        })
     }
 
     public addMessage(message: Message) {
-        this.messages.push(message);
+        if (this.initialized == false) {
+            this.initialized = true;
+        }
+        this._messages[message.id] = message;
     }
 }

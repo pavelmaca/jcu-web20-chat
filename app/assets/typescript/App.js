@@ -89,49 +89,44 @@ var App = (function () {
             }
         }
     };
-    App.prototype.switchContext = function (room, messages) {
+    App.prototype.switchContext = function (room) {
         var _this = this;
         if (!room.isinitialized()) {
-            return this.getMessages(room, null, function (room, messages) {
-                _this.switchContext(room, messages);
+            return this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), function (room) {
+                _this.switchContext(room);
             });
         }
         $(".messages .msg").remove();
-        console.log(messages);
-        var newMessages = (messages ? messages : room.messages);
-        console.log(this);
-        for (var _i = 0, newMessages_1 = newMessages; _i < newMessages_1.length; _i++) {
-            var message = newMessages_1[_i];
+        for (var _i = 0, _a = room.getMessages(); _i < _a.length; _i++) {
+            var message = _a[_i];
             this.showNewMessage(message);
         }
     };
     App.prototype.showNewMessage = function (message) {
         $(".messages").append('<div class="msg">' +
             '<div class="media-body">' +
-            '<small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>' +
+            '<small class="pull-right time"><i class="fa fa-clock-o"></i> ' + message.sentOn.format('D.M. HH:mm:ss') + '</small>' +
             '<h5 class="media-heading">' + message.name + '</h5>' +
             '<small class="col-sm-11">' + message.text + '</small>' +
             '</div>' +
             '</div>');
     };
-    App.prototype.getMessages = function (room, since, onSuccess) {
-        $.get("/api/messages", { "roomId": room.id }, function (data) {
+    App.prototype.getMessages = function (room, limit, since, onSuccess) {
+        $.get("/api/messages", { "roomId": room.id, "since": since.utc().format() }, function (data) {
             console.log("room history recieved");
-            var messages = [];
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var messageData = data_1[_i];
-                var message = new Message(messageData.id, messageData.name, messageData.message, messageData.sentOn);
-                messages.push(message);
-                room.messages.push(message);
+                var sentOn = moment(messageData.sentOn);
+                var message = new Message(messageData.id, messageData.name, messageData.message, sentOn);
+                room.addMessage(message);
             }
-            if (!room.isinitialized()) {
-                room.initMessages(messages);
-            }
-            onSuccess(room, messages);
+            onSuccess(room);
         });
     };
     return App;
 }());
+App.historySize = 10;
+App.historyDaysBack = 2;
 try {
     $(function () {
         var application = new App();

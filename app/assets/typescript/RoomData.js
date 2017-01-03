@@ -1,6 +1,6 @@
 var RoomData = (function () {
     function RoomData(id, name) {
-        this._messages = [];
+        this._messages = {};
         this.initialized = false;
         this._id = id;
         this._name = name;
@@ -22,19 +22,17 @@ var RoomData = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(RoomData.prototype, "messages", {
-        get: function () {
-            return this._messages;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    RoomData.prototype.initMessages = function (messages) {
-        this.initialized = true;
-        this.messages.concat(messages);
+    RoomData.prototype.getMessages = function () {
+        var _this = this;
+        return Object.keys(this._messages).map(function (prop) { return _this._messages[prop]; }).sort(function (a, b) {
+            return a.sentOn.diff(b.sentOn);
+        });
     };
     RoomData.prototype.addMessage = function (message) {
-        this.messages.push(message);
+        if (this.initialized == false) {
+            this.initialized = true;
+        }
+        this._messages[message.id] = message;
     };
     return RoomData;
 }());

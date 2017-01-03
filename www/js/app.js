@@ -89,49 +89,44 @@ var App = (function () {
             }
         }
     };
-    App.prototype.switchContext = function (room, messages) {
+    App.prototype.switchContext = function (room) {
         var _this = this;
         if (!room.isinitialized()) {
-            return this.getMessages(room, null, function (room, messages) {
-                _this.switchContext(room, messages);
+            return this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), function (room) {
+                _this.switchContext(room);
             });
         }
         $(".messages .msg").remove();
-        console.log(messages);
-        var newMessages = (messages ? messages : room.messages);
-        console.log(this);
-        for (var _i = 0, newMessages_1 = newMessages; _i < newMessages_1.length; _i++) {
-            var message = newMessages_1[_i];
+        for (var _i = 0, _a = room.getMessages(); _i < _a.length; _i++) {
+            var message = _a[_i];
             this.showNewMessage(message);
         }
     };
     App.prototype.showNewMessage = function (message) {
         $(".messages").append('<div class="msg">' +
             '<div class="media-body">' +
-            '<small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>' +
+            '<small class="pull-right time"><i class="fa fa-clock-o"></i> ' + message.sentOn.format('D.M. HH:mm:ss') + '</small>' +
             '<h5 class="media-heading">' + message.name + '</h5>' +
             '<small class="col-sm-11">' + message.text + '</small>' +
             '</div>' +
             '</div>');
     };
-    App.prototype.getMessages = function (room, since, onSuccess) {
-        $.get("/api/messages", { "roomId": room.id }, function (data) {
+    App.prototype.getMessages = function (room, limit, since, onSuccess) {
+        $.get("/api/messages", { "roomId": room.id, "since": since.utc().format() }, function (data) {
             console.log("room history recieved");
-            var messages = [];
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var messageData = data_1[_i];
-                var message = new Message(messageData.id, messageData.name, messageData.message, messageData.sentOn);
-                messages.push(message);
-                room.messages.push(message);
+                var sentOn = moment(messageData.sentOn);
+                var message = new Message(messageData.id, messageData.name, messageData.message, sentOn);
+                room.addMessage(message);
             }
-            if (!room.isinitialized()) {
-                room.initMessages(messages);
-            }
-            onSuccess(room, messages);
+            onSuccess(room);
         });
     };
     return App;
 }());
+App.historySize = 10;
+App.historyDaysBack = 2;
 try {
     $(function () {
         var application = new App();
@@ -183,7 +178,7 @@ var Message = (function () {
 }());
 var RoomData = (function () {
     function RoomData(id, name) {
-        this._messages = [];
+        this._messages = {};
         this.initialized = false;
         this._id = id;
         this._name = name;
@@ -205,19 +200,17 @@ var RoomData = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(RoomData.prototype, "messages", {
-        get: function () {
-            return this._messages;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    RoomData.prototype.initMessages = function (messages) {
-        this.initialized = true;
-        this.messages.concat(messages);
+    RoomData.prototype.getMessages = function () {
+        var _this = this;
+        return Object.keys(this._messages).map(function (prop) { return _this._messages[prop]; }).sort(function (a, b) {
+            return a.sentOn.diff(b.sentOn);
+        });
     };
     RoomData.prototype.addMessage = function (message) {
-        this.messages.push(message);
+        if (this.initialized == false) {
+            this.initialized = true;
+        }
+        this._messages[message.id] = message;
     };
     return RoomData;
 }());

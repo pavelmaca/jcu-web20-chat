@@ -5,10 +5,10 @@ class Message{
     private _id:number;
     private _name:string;
     private _text:string;
-    private _sentOn:Date;
+    private _sentOn:Moment;
 
 
-    constructor(id: number, name: string, text: string, sentOn: Date) {
+    constructor(id: number, name: string, text: string, sentOn: Moment) {
         this._id = id;
         this._name = name;
         this._text = text;
@@ -27,7 +27,7 @@ class Message{
         return this._text;
     }
 
-    get sentOn(): Date {
+    get sentOn(): Moment {
         return this._sentOn;
     }
 }
