@@ -21,7 +21,7 @@ class MessagesPresenter extends BasePresenter
 
         //TODO číst quer parametry
 
-        $messageList = [
+        $messageList1 = [
             [
                 "id" => 123123,
                 "name" => "Cpt. James T. Kirk",
@@ -36,7 +36,16 @@ class MessagesPresenter extends BasePresenter
             ]
         ];
 
-        $this->sendResponse(new JsonResponse($messageList));
+        $messageList2 = [
+            [
+                "id" => 123124,
+                "name" => "CBBB",
+                "message" => "lorem impus",
+                "sentOn" => "2045-09-19T02:43:37+0500"
+            ]
+        ];
+
+        $this->sendResponse(new JsonResponse($roomId == 1 ? $messageList1 : $messageList2));
     }
 
     public function create()

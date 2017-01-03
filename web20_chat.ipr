@@ -307,6 +307,12 @@
     </profile>
     <version value="1.0" />
   </component>
+  <component name="JavaScriptLibraryMappings">
+    <includedPredefinedLibrary name="ECMAScript 6" />
+  </component>
+  <component name="JavaScriptSettings">
+    <option name="languageLevel" value="ES6" />
+  </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="7" />
   <component name="PhpUnit">
     <phpunit_settings>
@@ -361,6 +367,11 @@
   </component>
   <component name="SvnConfiguration">
     <configuration>C:\Users\Pavel\AppData\Roaming\Subversion</configuration>
+  </component>
+  <component name="TypeScriptCompiler">
+    <option name="isCompilerEnabled" value="true" />
+    <option name="hasOutDirectory" value="true" />
+    <option name="outDirectory" value="D:\Repositories\jcu-web20-chat\www\js" />
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
