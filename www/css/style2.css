@@ -1,0 +1,67 @@
+.member_list .chat-body {
+    margin-left: 47px;
+    margin-top: 0;
+}
+
+.member_list li {
+    padding: 6px;
+}
+.member_list ul {
+    border: 1px solid #dddddd;
+}
+
+.member_list li {
+    border-bottom: 1px solid #dddddd;
+    padding: 6px;
+}
+.member_list li:last-child {
+    border-bottom:none;
+}
+.member_list {
+    height: 380px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.message_section {
+    border: 1px solid #dddddd;
+}
+.chat_area {
+    float: left;
+    height: 300px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+}
+.chat_area li {
+    padding: 14px 14px 0;
+}
+.chat_area li .chat-img1 img {
+    height: 40px;
+    width: 40px;
+}
+.chat_area .chat-body1 {
+    margin-left: 50px;
+}
+.chat-body1 p {
+    background: #fbf9fa none repeat scroll 0 0;
+    padding: 10px;
+}
+.chat_area .admin_chat .chat-body1 {
+    margin-left: 0;
+    margin-right: 50px;
+}
+.chat_area li:last-child {
+    padding-bottom: 10px;
+}
+.message_write {
+    background: #f5f3f3 none repeat scroll 0 0;
+    float: left;
+    padding: 15px;
+    width: 100%;
+}
+.member_list li:hover {
+    background: #428bca none repeat scroll 0 0;
+    color: #fff;
+    cursor:pointer;
+}

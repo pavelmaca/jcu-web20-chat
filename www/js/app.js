@@ -14,12 +14,12 @@ var App = (function () {
     };
     App.prototype.initSwitchRoomListener = function () {
         var _this = this;
-        $("#conversations").on('click', ".conversation", function (e) {
+        $("#conversations").on('click', "li", function (e) {
             var selectedRoomEl = $(e.currentTarget);
             var roomId = selectedRoomEl.data("roomId");
             if (_this.activeRoom == null || roomId != _this.activeRoom.id) {
                 console.log("hightlight");
-                $('#conversations .conversation.active').removeClass('active');
+                $('#conversations li.active').removeClass('active');
                 $(e.currentTarget).addClass('active');
                 _this.activeRoom = _this.getRoomDataById(roomId);
                 _this.realoadContent(_this.activeRoom);
@@ -83,17 +83,29 @@ var App = (function () {
                     }
                 });
             }
-            $("#conversations .conversation:first").trigger("click");
+            $("#conversations li:first").trigger("click");
             _this.initRefreshTimer();
         });
     };
     App.prototype.showNewRoom = function (roomData) {
-        $("#conversations").append('<div class="conversation btn" data-room-id="' + roomData.id + '">' +
-            '<div class="media-body">' +
-            '<h5 class="media-heading">' + roomData.name + '</h5>' +
-            //   '<small class="pull-right time">Last seen 12:10am</small>' +
-            '</div>' +
-            '</div>');
+        $("#conversations").append('<li data-room-id="' + roomData.id + '"><div class="chat-body clearfix">' +
+            '<strong class="primary-font">' + roomData.name + '</strong>' +
+            '</div></li>');
+        /*
+         '<li class="left clearfix" data-room-id="' + roomData.id + '">' +
+         '<b class="pull-left">' + roomData.name + '</b>' +
+         ' <div class="chat-body1 clearfix">' +
+         '<p>Cont</p>' +
+         '<div class="chat_time pull-right">09:40PM</div>' +
+         '</div>' +
+         '</li>');/*
+
+         '<div class="conversation btn" data-room-id="' + roomData.id + '">' +
+         '<div class="media-body">' +
+         '<h5 class="media-heading">' + roomData.name + '</h5>' +
+         //   '<small class="pull-right time">Last seen 12:10am</small>' +
+         '</div>' +
+         '</div>');*/
     };
     App.prototype.getRoomDataById = function (roomId) {
         //set active room
@@ -105,20 +117,29 @@ var App = (function () {
         }
     };
     App.prototype.realoadContent = function (room) {
-        $(".messages .msg").remove();
+        $(".messages li").remove();
         for (var _i = 0, _a = room.getMessages(); _i < _a.length; _i++) {
             var message = _a[_i];
             this.showNewMessage(message);
         }
     };
     App.prototype.showNewMessage = function (message) {
-        $(".messages").append('<div class="msg">' +
-            '<div class="media-body">' +
-            '<small class="pull-right time"><i class="fa fa-clock-o"></i> ' + message.sentOn.format('D.M. HH:mm:ss') + '</small>' +
-            '<h5 class="media-heading">' + message.name + '</h5>' +
-            '<small class="col-sm-11">' + message.text + '</small>' +
+        $(".messages").append('<li class="left clearfix">' +
+            '<b class="pull-left">' + message.name + '</b>' +
+            ' <div class="chat-body1 clearfix">' +
+            '<p>' + message.text + '</p>' +
+            '<div class="chat_time pull-right">' + message.sentOn.format('D.M. HH:mm:ss') + '</div>' +
             '</div>' +
-            '</div>');
+            '</li>');
+        /*
+
+         '<div class="msg">' +
+         '<div class="media-body">' +
+         '<small class="pull-right time"><i class="fa fa-clock-o"></i> ' + message.sentOn.format('D.M. HH:mm:ss') + '</small>' +
+         '<h5 class="media-heading">' + message.name + '</h5>' +
+         '<small class="col-sm-11">' + message.text + '</small>' +
+         '</div>' +
+         '</div>');*/
     };
     App.prototype.getMessages = function (room, limit, since, onSuccess) {
         $.get("/api/messages", { "roomId": room.id, "sentSince": since.utc().format() }, function (data, textStatus, request) {
