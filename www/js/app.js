@@ -2,6 +2,7 @@ var App = (function () {
     function App() {
         this.activeRoom = null;
         this.roomList = [];
+        this.refreshinterval = 500;
     }
     App.prototype.init = function () {
         var _this = this;
@@ -16,15 +17,12 @@ var App = (function () {
         $("#conversations").on('click', ".conversation", function (e) {
             var selectedRoomEl = $(e.currentTarget);
             var roomId = selectedRoomEl.data("roomId");
-            console.log(selectedRoomEl);
-            console.log(roomId);
-            console.log(_this.activeRoom);
             if (_this.activeRoom == null || roomId != _this.activeRoom.id) {
                 console.log("hightlight");
                 $('#conversations .conversation.active').removeClass('active');
-                $(e.target).addClass('active');
+                $(e.currentTarget).addClass('active');
                 _this.activeRoom = _this.getRoomDataById(roomId);
-                _this.switchContext(_this.activeRoom);
+                _this.realoadContent(_this.activeRoom);
             }
             console.log("room selected: " + roomId);
         });
@@ -75,12 +73,18 @@ var App = (function () {
         var _this = this;
         $.get("/api/rooms", null, function (data) {
             for (var i in data) {
-                var room = data[i];
-                var roomData = new RoomData(room.id, room.name);
-                _this.roomList.push(roomData);
-                _this.showNewRoom(roomData);
+                var roomObj = data[i];
+                var room = new RoomData(roomObj.id, roomObj.name);
+                _this.roomList.push(room);
+                _this.showNewRoom(room);
+                _this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), function (room) {
+                    if (_this.activeRoom == room) {
+                        _this.realoadContent(room);
+                    }
+                });
             }
             $("#conversations .conversation:first").trigger("click");
+            _this.initRefreshTimer();
         });
     };
     App.prototype.showNewRoom = function (roomData) {
@@ -100,13 +104,7 @@ var App = (function () {
             }
         }
     };
-    App.prototype.switchContext = function (room) {
-        var _this = this;
-        if (!room.isinitialized()) {
-            return this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), function (room) {
-                _this.switchContext(room);
-            });
-        }
+    App.prototype.realoadContent = function (room) {
         $(".messages .msg").remove();
         for (var _i = 0, _a = room.getMessages(); _i < _a.length; _i++) {
             var message = _a[_i];
@@ -123,8 +121,7 @@ var App = (function () {
             '</div>');
     };
     App.prototype.getMessages = function (room, limit, since, onSuccess) {
-        $.get("/api/messages", { "roomId": room.id, "since": since.utc().format() }, function (data, textStatus, request) {
-            console.log();
+        $.get("/api/messages", { "roomId": room.id, "sentSince": since.utc().format() }, function (data, textStatus, request) {
             console.log("room history recieved");
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var messageData = data_1[_i];
@@ -145,8 +142,7 @@ var App = (function () {
                 "roomId": room.id
             }, function (data, textStatus, request) {
                 if (request.status == 201) {
-                    // let id: number = Number(request.getResponseHeader('Location').match(//i));
-                    var id = 100;
+                    var id = Number(request.getResponseHeader('Location').match(/.+\/([0-9]+)$/i)[1]);
                     var message = new Message(id, username, text, sendTime);
                     room.addMessage(message);
                     if (_this.activeRoom == room) {
@@ -155,6 +151,18 @@ var App = (function () {
                     }
                 }
             });
+        });
+    };
+    App.prototype.initRefreshTimer = function () {
+        var _this = this;
+        this.timer = setInterval(function () { return _this.refreshMessages(); }, this.refreshinterval);
+    };
+    App.prototype.refreshMessages = function () {
+        var _this = this;
+        this.getMessages(this.activeRoom, null, this.activeRoom.getLastMessageTime(), function (room) {
+            if (_this.activeRoom == room) {
+                _this.realoadContent(room);
+            }
         });
     };
     return App;
@@ -245,6 +253,10 @@ var RoomData = (function () {
             this.initialized = true;
         }
         this._messages[message.id] = message;
+    };
+    RoomData.prototype.getLastMessageTime = function () {
+        var messages = this.getMessages();
+        return messages[messages.length - 1].sentOn;
     };
     return RoomData;
 }());

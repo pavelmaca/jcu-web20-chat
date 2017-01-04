@@ -18,3 +18,7 @@ session:
 services:
 	- App\Forms\FormFactory
 	router: App\RouterFactory::createRouter
+
+database:
+    dsn: 'sqlite:%appDir%/messages.db3'
+    conventions: static

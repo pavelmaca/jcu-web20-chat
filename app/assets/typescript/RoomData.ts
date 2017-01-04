@@ -5,9 +5,6 @@ class RoomData {
 
     private _messages: {[id: number]: Message} = {};
 
-    private latMessageDate: Moment;
-
-
     private initialized = false;
 
     constructor(id: number, name: string) {
@@ -34,10 +31,15 @@ class RoomData {
         })
     }
 
-    public addMessage(message: Message) {
+    public addMessage(message: Message):void {
         if (this.initialized == false) {
             this.initialized = true;
         }
         this._messages[message.id] = message;
+    }
+
+    public getLastMessageTime(): Moment {
+        let messages: Message[] = this.getMessages();
+        return messages[messages.length - 1].sentOn;
     }
 }

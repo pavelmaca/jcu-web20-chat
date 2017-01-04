@@ -6,6 +6,9 @@ class App {
 
     private static historySize: number = 10;
     private static historyDaysBack: number = 2;
+    private refreshinterval: number = 500;
+
+    private timer;
 
     public init() {
         this.initSwitchRoomListener();
@@ -19,15 +22,12 @@ class App {
         $("#conversations").on('click', ".conversation", (e) => {
             let selectedRoomEl = $(e.currentTarget);
             let roomId = selectedRoomEl.data("roomId");
-            console.log(selectedRoomEl);
-            console.log(roomId);
-            console.log(this.activeRoom);
             if (this.activeRoom == null || roomId != this.activeRoom.id) {
                 console.log("hightlight");
                 $('#conversations .conversation.active').removeClass('active');
-                $(e.target).addClass('active');
+                $(e.currentTarget).addClass('active');
                 this.activeRoom = this.getRoomDataById(roomId);
-                this.switchContext(this.activeRoom);
+                this.realoadContent(this.activeRoom);
             }
             console.log("room selected: " + roomId);
         });
@@ -86,12 +86,19 @@ class App {
     private loadRoomList() {
         $.get("/api/rooms", null, (data) => {
             for (let i in data) {
-                let room = data[i];
-                let roomData = new RoomData(room.id, room.name)
-                this.roomList.push(roomData);
-                this.showNewRoom(roomData)
+                let roomObj = data[i];
+                let room = new RoomData(roomObj.id, roomObj.name);
+                this.roomList.push(room);
+                this.showNewRoom(room);
+
+                this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), (room: RoomData) => {
+                    if (this.activeRoom == room) {
+                        this.realoadContent(room);
+                    }
+                });
             }
             $("#conversations .conversation:first").trigger("click");
+            this.initRefreshTimer();
         })
     }
 
@@ -102,6 +109,7 @@ class App {
             //   '<small class="pull-right time">Last seen 12:10am</small>' +
             '</div>' +
             '</div>');
+
     }
 
     private getRoomDataById(roomId) {
@@ -113,14 +121,8 @@ class App {
         }
     }
 
-    private switchContext(room: RoomData) {
-        if (!room.isinitialized()) {
-            return this.getMessages(room, App.historySize, moment().subtract(App.historyDaysBack, 'days'), (room: RoomData) => {
-                this.switchContext(room)
-            });
-        }
+    private realoadContent(room: RoomData) {
         $(".messages .msg").remove();
-
 
         for (let message of room.getMessages()) {
             this.showNewMessage(message);
@@ -138,8 +140,7 @@ class App {
     }
 
     private getMessages(room: RoomData, limit: Number, since: Moment, onSuccess: (room: RoomData) => any) {
-        $.get("/api/messages", {"roomId": room.id, "since": since.utc().format()}, (data, textStatus, request) => {
-            console.log();
+        $.get("/api/messages", {"roomId": room.id, "sentSince": since.utc().format()}, (data, textStatus, request) => {
             console.log("room history recieved");
             for (let messageData of data) {
                 let sentOn: Moment = moment(messageData.sentOn);
@@ -159,8 +160,7 @@ class App {
                 "roomId": room.id
             }, (data, textStatus, request) => {
                 if (request.status == 201) {
-                    // let id: number = Number(request.getResponseHeader('Location').match(//i));
-                    let id: number = 100;
+                    let id: number = Number(request.getResponseHeader('Location').match(/.+\/([0-9]+)$/i)[1]);
                     let message: Message = new Message(id, username, text, sendTime);
                     room.addMessage(message);
 
@@ -172,6 +172,18 @@ class App {
             });
         });
 
+    }
+
+    private initRefreshTimer() {
+        this.timer = setInterval(() => this.refreshMessages(), this.refreshinterval);
+    }
+
+    private refreshMessages() {
+        this.getMessages(this.activeRoom, null, this.activeRoom.getLastMessageTime(), (room: RoomData) => {
+            if (this.activeRoom == room) {
+                this.realoadContent(room);
+            }
+        })
     }
 }
 
