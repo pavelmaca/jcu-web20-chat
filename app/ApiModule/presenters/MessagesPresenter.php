@@ -50,7 +50,9 @@ class MessagesPresenter extends BasePresenter
         $database = $this->context->getByType(Context::class);
 
         $table = $database->table('messages');
-        $query = $table->setPrimarySequence('email')->where('room_id = ?', $roomId)->where("timestamp >= ?", new DateTime($sentSince));
+        $query = $table->setPrimarySequence('email')->where('room_id = ?', $roomId)->where("timestamp > ?", new DateTime($sentSince))
+            ->order('timestamp DESC');
+
         if ($limit != null) {
             $query->limit($limit);
         }

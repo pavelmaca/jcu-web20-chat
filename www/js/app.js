@@ -121,7 +121,11 @@ var App = (function () {
             '</div>');
     };
     App.prototype.getMessages = function (room, limit, since, onSuccess) {
-        $.get("/api/messages", { "roomId": room.id, "sentSince": since.utc().format() }, function (data, textStatus, request) {
+        $.get("/api/messages", {
+            "roomId": room.id,
+            "limit": limit,
+            "sentSince": since.utc().format()
+        }, function (data, textStatus, request) {
             console.log("room history recieved");
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var messageData = data_1[_i];

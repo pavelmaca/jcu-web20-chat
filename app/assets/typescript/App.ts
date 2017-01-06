@@ -140,7 +140,11 @@ class App {
     }
 
     private getMessages(room: RoomData, limit: Number, since: Moment, onSuccess: (room: RoomData) => any) {
-        $.get("/api/messages", {"roomId": room.id, "sentSince": since.utc().format()}, (data, textStatus, request) => {
+        $.get("/api/messages", {
+            "roomId": room.id,
+            "limit": limit,
+            "sentSince": since.utc().format()
+        }, (data, textStatus, request) => {
             console.log("room history recieved");
             for (let messageData of data) {
                 let sentOn: Moment = moment(messageData.sentOn);
